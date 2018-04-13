@@ -30,6 +30,7 @@ import pandas as pd
 
 from abbrev_matcher import AbbrevMatcher
 
+
 class PMID_PMC_Mapper(object):
     '''
     ID mapping object: loads/saves/updates and applies dictionary mapping PMIDs to PMCs and vice-versa.
@@ -58,7 +59,7 @@ class PMID_PMC_Mapper(object):
                 print('Error: unrecognized format of id mapper data, please provide .pkl or .tsv path')
                 raise Exception
 
-        if self.data_format != None:
+        if self.data_format is not None:
             try:
                 self.data = self._load_data(self.data_path)
             except IOError:
@@ -103,14 +104,15 @@ class PMID_PMC_Mapper(object):
         try:
             result = self.data[available_id]
 
-            if result == 'None' or result == None:
+            if result is 'None' or result is None:
                 return None
 
             else:
                 return str(result)
                 
         except KeyError:
-            rq = 'http://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids=' + str(available_id) + '&tool=Python&email=' + str(entrez_email)
+            rq = 'http://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids=' + \
+                str(available_id) + '&tool=Python&email=' + str(entrez_email)
             try:
                 r = requests.get(rq)
                 self.download_count += 1
@@ -161,7 +163,7 @@ class IDCollection(object):
         self.dumpfiles_list = None
 
         self.type = type
-        if not self.type in ['pmid', 'pmcid']:
+        if self.type not in ['pmid', 'pmcid']:
             print('Unknown collection type:', self.type)
             raise AttributeError
         self.dump_dir = dump_dir
@@ -188,28 +190,52 @@ class IDCollection(object):
             if self.ids:
                 for doc_id in self.ids:
                     if self.type == 'pmid':
-                        id_dump_file = PMID_dump_file(doc_id, self.dump_dir, id_mapper=id_mapper, entrez_email=self.entrez_email, debug=debug)
+                        id_dump_file = PMID_dump_file(
+                            doc_id,
+                            self.dump_dir,
+                            id_mapper=id_mapper,
+                            entrez_email=self.entrez_email,
+                            debug=debug
+                                                    )
                     elif self.type == 'pmcid':
-                        id_dump_file = PMC_dump_file(doc_id, self.dump_dir, id_mapper=id_mapper, entrez_email=self.entrez_email, debug=debug)
+                        id_dump_file = PMC_dump_file(
+                            doc_id,
+                            self.dump_dir,
+                            id_mapper=id_mapper,
+                            entrez_email=self.entrez_email,
+                            debug=debug
+                                                    )
                     dumpfiles.append(id_dump_file)
 
                 return dumpfiles
 
-    def get_section_collection(self, sections_list, out_path=None, separate=False, titles=False, id_mapper=None, report=False, debug=False):
+    def get_section_collection(
+            self,
+            sections_list,
+            out_path=None,
+            separate=False,
+            titles=False,
+            id_mapper=None,
+            report=False,
+            debug=False
+                            ):
         '''
         Only use specific specified sections of text, e.g. CONCLUSION and RESULTS.
         So far only for pmid collection type.
-        :: param separate: False = write text for the whole collection into one file; True = write text for each document into a seperate file (in this case 'out path' is used as directory)
+        Args:
+            separate:
+                False = write text for the whole collection into one file;
+                True = write text for each document into a seperate file (in this case 'out path' is used as directory)
         '''
 
         text_list = list()  # stores text of the whole collection
 
-        if separate and out_path != None:  # write section text for each document to a separate file
+        if separate and out_path is not None:  # write section text for each document to a separate file
             if not os.path.isdir(out_path):
                 os.makedirs(out_path)
             write_file = False
             write_dir = True
-        elif not separate and out_path != None:  # write section text for all documents to one joint file
+        elif not separate and out_path is not None:  # write section text for all documents to one joint file
             write_file = True
             write_dir = False
             out_file = open(out_path, 'w', encoding='utf-8')
@@ -511,7 +537,8 @@ class PMID_dump_file(DumpFile):
 
                 if subheadings is True and sec_title is not None:
                     if sec_text:
-                        # normalize unicode of section text (especially important for normalization of a range of different possible whitespace characters)
+                        # normalize unicode of section text 
+                        # (especially important for normalization of a range of different possible whitespace characters)
                         sec_text = unicodedata.normalize('NFKD', sec_text)
                         abstract_list.append(sec_title + ': ' + sec_text)
                     else:
@@ -520,7 +547,8 @@ class PMID_dump_file(DumpFile):
                     abstract_list.append(sec_text)
             
         abstract_string = ' '.join([a for a in abstract_list if a])
-        abstract_string = re.sub('(<br><br>|<br />)', '', abstract_string)  # removing br-tags #is this still necessary?
+        # removing br-tags #is this still necessary?
+        abstract_string = re.sub('(<br><br>|<br />)', '', abstract_string)
         title_text_dict['abstract'] = abstract_string
 
         self.title_text_dict = title_text_dict
@@ -680,7 +708,8 @@ class TitleContentDict(object):
         self.current_section = None
         self.section_tags = ['article-title', 'abstract', 'body']
         self.title_tags = ['title']
-        self.continue_tags = ['label', 'caption', 'dips-formula', 'inline-formula', 'xref', 'author-notes', 'related-article']  # caption: avoids inclusion of irrelevant tags (and tag content)
+        # caption: avoids inclusion of irrelevant tags (and tag content)
+        self.continue_tags = ['label', 'caption', 'dips-formula', 'inline-formula', 'xref', 'author-notes', 'related-article']
         self.titles = []    # section titles in the right order
         self.include_references = include_references
         self.include_titles = include_titles
@@ -694,18 +723,28 @@ class TitleContentDict(object):
 
         text = text_element.text
 
-        processed_text = self.process_text(text, remove_sb=remove_sb, replace_newline=replace_newline, replace_multiple_ws=replace_multiple_ws)
+        processed_text = self.process_text(
+            text,
+            remove_sb=remove_sb,
+            replace_newline=replace_newline,
+            replace_multiple_ws=replace_multiple_ws
+                                    )
 
         return processed_text
         
     def process_text(self, text, remove_sb=True, replace_newline=True, replace_multiple_ws=True):
         '''
-        remove_sb: remove empty or almost empty (containing only certain punctuation) squared brackets (originating from references) from text.
-        replace_newline: replace all newline characters by single whitespace characters
-        replace_multiple_ws: replace all occurrences of 2 or more sequential whitespace characters by single whitespace characters
+        Args:
+            remove_sb: 
+                remove empty or almost empty (containing only certain punctuation) squared brackets 
+                (originating from references) from text.
+            replace_newline: 
+                replace all newline characters by single whitespace characters
+            replace_multiple_ws: 
+                replace all occurrences of 2 or more sequential whitespace characters by 
+                single whitespace characters
         '''
 
-        #print([text])
         if text is None:
             return ''
         if replace_newline is True:
@@ -729,15 +768,16 @@ class TitleContentDict(object):
 
         for child in tree.getchildren():  # only get immediate children
             if child.tag in self.continue_tags:
-                #print('continue tag:', child.tag)
+                # print('continue tag:', child.tag)
                 continue  # ignore current element and all its children elements
-            if self.include_references is False and child.tag in self.titles:  # the child's tag is already in the list of processed section headings
+            if self.include_references is False and child.tag in self.titles:
+                # the child's tag is already in the list of processed section headings
                 if child.tag == 'article-title':
                     if 'body' in seen_sections:
                         break  # it is most likely a title of a reference (which are not to be included)
                     else:
                         #print(child.text)
-                        #e.g. abstracts of related papers
+                        # e.g. abstracts of related papers
                         pass
 
             if child.tag in self.section_tags and child.tag not in seen_sections:  # a new section starts
@@ -746,8 +786,8 @@ class TitleContentDict(object):
                 seen_sections.append(child.tag)
                 self.current_section = child.tag
                 current_title = self.process_text(self.current_section)
-
-                self.data[current_title] = [self.process_text_element(child)]  # add the mapping between the current title and the text to the data
+                # add the mapping between the current title and the text to the data
+                self.data[current_title] = [self.process_text_element(child)]
                 self.titles.append(current_title)
     
 
@@ -764,7 +804,8 @@ class TitleContentDict(object):
                 if self.include_references is False and child.text == 'References':
                     break  # everything after 'References' is not to be included
 
-            elif child.tag == 'article-meta' and 'abstract' not in seen_sections:  # in some cases 'abstract' might be in a 'article-meta' tag and this tag should be parsed
+            elif child.tag == 'article-meta' and 'abstract' not in seen_sections:
+                # in some cases 'abstract' might be in a 'article-meta' tag and this tag should be parsed
                 pass
 
             else:
@@ -859,8 +900,10 @@ class PMC_dump_file(DumpFile):
     def clean_tree(self, tree='default', removables=['license', 'notes', 'trans-abstract', 'trans-title']):
         '''
         Removes in-text tags that are not relevant and that cause the xml parser to break
-        tree: default is the instance's whole file tree
-        removables: list of tags to be discarded togehter with their contents
+
+        Args:
+            tree: xml tree; default is the instance's whole file tree
+            removables: list of tags to be discarded together with their contents
         '''
         if tree == 'default':
             #tree = self.file_tree
@@ -873,13 +916,24 @@ class PMC_dump_file(DumpFile):
             return None
         
         core_relevant_tags = ['body', 'p', 'sec', 'label', 'title', 'abstract', 'article-title']
-        additional_relevant_tags = ['list', 'boxed-text', 'list-item', 'caption', 'inline-formula', 'author-notes', 'article-meta']  # some of them need to be present in order to be able to remove them later on
+        # some of them need to be present in order to be able to remove them later on
+        additional_relevant_tags = [
+            'list',
+            'boxed-text',
+            'list-item',
+            'caption',
+            'inline-formula',
+            'author-notes',
+            'article-meta'
+                                    ]
+
         relevant_tags = core_relevant_tags + additional_relevant_tags
         present_tags = list(set([element.tag for element in tree.iter()]))
 
         # define tags to remove together with all children
         deltag = 'remove-tag'
-        remove_tags = [deltag] + removables  # deltag is a dummy tag for which is used to replace all tags with specific attribs to be removed
+        remove_tags = [deltag] + removables
+        # deltag is a dummy tag for which is used to replace all tags with specific attribs to be removed
         remove_tags_with_attribs = [
             ('xref', 'ref-type="bibr"'),  # bibligraphic references (mostly numbers)
             ('xref', 'ref-type="contrib"'),  # author contributions
@@ -887,9 +941,10 @@ class PMC_dump_file(DumpFile):
             ('xref', 'ref-type="fn"'),  # reference to footnote (mostly numbers)
             ('xref', 'ref-type="bio"'),
             ('xref', 'ref-type="author-notes"')
+                   
                                     ]  
-        
-        strip_tags = [tag for tag in present_tags if tag not in relevant_tags]  # xml tags to be stripped from the input xml
+        # xml tags to be stripped from the input xml
+        strip_tags = [tag for tag in present_tags if tag not in relevant_tags]  
         if self.debug:
             print('STRIP TAGS', strip_tags)
             print('REMOVE TAGS', remove_tags)
@@ -899,7 +954,9 @@ class PMC_dump_file(DumpFile):
         #     print(el.get('ref-type'))
 
         # prepare specified tags with a specific attribute to be removed by converting them to an identifiable dummy tag
-        tags_attribs_findstrings = [".//{tag}[@{attrib}]".format(tag=tag, attrib=attrib) for (tag, attrib) in remove_tags_with_attribs]
+        tags_attribs_findstrings = [".//{tag}[@{attrib}]".format(tag=tag, attrib=attrib)
+                                    for (tag, attrib) in remove_tags_with_attribs]
+
         for fs in tags_attribs_findstrings:
             for el in tree.iterfind(fs):
                 el.tag = deltag
@@ -944,8 +1001,12 @@ class PMC_dump_file(DumpFile):
 
     def get_text(sec, replace_newline=True, replace_multiple_ws=True):
         '''
-        replace_newline: replace all newline characters by single whitespace characters
-        replace_multiple_ws: replace all occurrences of 2 or more sequential whitespace characters by single whitespace characters
+        Args:
+            replace_newline: 
+                replace all newline characters by single whitespace characters
+            replace_multiple_ws:
+                replace all occurrences of 2 or more sequential whitespace characters by
+                single whitespace characters
         '''
         if sec is None:
             return ''
@@ -962,8 +1023,12 @@ class PMC_dump_file(DumpFile):
     @staticmethod
     def get_sec_content(sec, replace_newline=True, replace_multiple_ws=True):
         '''
-        replace_newline: replace all newline characters by single whitespace characters
-        replace_multiple_ws: replace all occurrences of 2 or more sequential whitespace characters by single whitespace characters
+        Args:
+            replace_newline:
+                replace all newline characters by single whitespace characters (default)
+            replace_multiple_ws:
+                replace all occurrences of 2 or more sequential whitespace characters
+                by single whitespace characters (default)
         '''
         if sec is None:
             return ''
@@ -986,7 +1051,6 @@ class PMC_dump_file(DumpFile):
         text_list = list()
         continue_tags = ['pmc-articleset', 'label']  # nothing happens for these tags
         for i in clean_tree.iter():
-            #print(i)
             if i.tag in continue_tags:
                 continue
             if i.text == 'References' and include_references is False:
@@ -1007,9 +1071,7 @@ class PMC_dump_file(DumpFile):
         return [PMC_dump_file.get_sec_title(i) for i in subsections]
 
     def body_section_headings(self):
-        '''
-        Returns all first level section headings
-        '''
+        ''' Returns all first level section headings '''
         article_body = self.file_tree.find(".//body")
         if article_body is None:
             return None  # no body available
@@ -1027,9 +1089,12 @@ class PMC_dump_file(DumpFile):
 
     def title_content_dict(self, sec, remove_newline=True):
         '''
-        Goes through the xml and generates a dictionary structure mapping section headings to section content in a recursive way.
-        Dictionary keys on each level: 'abstract' (only first level), 'body' (only first level), 'text', 'subsections'; 'subsections' contains a dictionary
-        PROBLEM with sections without a title! Sections without a title are lost. [CHANGE THIS!!]
+        Goes through the xml and generates a dictionary structure mapping section headings
+        to section content in a recursive way.
+        Dictionary keys on each level:
+        'abstract' (only first level), 'body' (only first level), 'text', 'subsections';
+        'subsections' contains a dictionary
+        * TODO: PROBLEM with sections without a title! Sections without a title are lost. [CHANGE THIS!!]
         '''
         # TODO: replace this using TitleContentDict object
         raise NotImplementedError
@@ -1038,8 +1103,6 @@ class PMC_dump_file(DumpFile):
         if tree == 'default':
             clean_tree = self.clean_tree()
         else:
-            print(tree)
-            #print(et.tostring(tree))
             clean_tree = self.clean_tree(tree=tree)
         title_content = TitleContentDict(clean_tree, include_references=include_references)
         return title_content.get_title_text_dict(include_titles=include_titles, include_newlines=include_newlines)
@@ -1113,7 +1176,7 @@ class PMC_dump_file(DumpFile):
     def get_xml_lang(self):
         '''
         Get xml language from xml:lang attribute
-        problem: this does not work anymore after fulltext detection; does self.file_tree change?
+        *TODO: problem - this does not work anymore after fulltext detection; does self.file_tree change?
         '''
         tree = self.file_tree
         article = tree.find(".//article")
