@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
 """
-Module for finding abbreviations in text (if they have the standard format of a full form followed by the abbreviation in brackets).
-Contains methods for extracting abbreviations from a file or from a collection and replacing abbreviations in text by full forms.
+Module for finding abbreviations in text (if they have the standard format of a full form followed by 
+the abbreviation in brackets).
+Contains methods for extracting abbreviations from a file or from a collection and replacing abbreviations
+in text by full forms.
 
 Author: Tilia Ellendorff
 
@@ -39,13 +41,17 @@ class AbbrevMatcher(object):
         - if they contain a '='
         - if they only contain non-alphabetical characters
         '''
-        if not self.min_len <= len(abbrev_candidate) <= self.max_len:  # needs to be of defined length
+
+        # rule: needs to be of defined length
+        if not self.min_len <= len(abbrev_candidate) <= self.max_len:
             return False
-        if '=' in abbrev_candidate:  # no '=' allowed
+        if '=' in abbrev_candidate:  # rule: no '=' allowed
             return False
-        if not any(char.isalpha() for char in abbrev_candidate):  # needs to contain at least one alphabetic character
+        # rule: needs to contain at least one alphabetic character
+        if not any(char.isalpha() for char in abbrev_candidate):
             return False
-        if abbrev_candidate.islower():  #exclude all lower-case abbreviations
+        # rule: exclude all lower-case abbreviations
+        if abbrev_candidate.islower():
             return False
         if abbrev_candidate in self.abbrev_exclude:
             return False
@@ -59,9 +65,11 @@ class AbbrevMatcher(object):
         num_punct_chars = len([c for c in long_version_candidate if c in string.punctuation])
         if num_punct_chars > 2:
             return False
-        if abbrev_candidate.lower() in long_version_candidate.lower():  # abbreviation should not be part of the long version
+        # rule: abbreviation should not be part of the long version
+        if abbrev_candidate.lower() in long_version_candidate.lower():
             return False
-        if not all(char.lower() in long_version_candidate.lower() for char in abbrev_candidate):  # all characters of the abbreviation candidate should be part of the long version
+        # rule: all characters of the abbreviation candidate should be part of the long version
+        if not all(char.lower() in long_version_candidate.lower() for char in abbrev_candidate):
             return False
         return True
 
@@ -109,9 +117,11 @@ class AbbrevMatcher(object):
                 start_char = abbrev_candidate[0]
                 abbrev_offset = m.start()
 
-                pre_string = text_string[:abbrev_offset]  # only look at text string before abbreviation
+                # only look at text string before abbreviation
+                pre_string = text_string[:abbrev_offset]  
                 pre_string_list = re.split('[\/\s-]', pre_string)
-                pre_string_list_rev = [w for w in reversed(pre_string_list)]  # reverse list of tokens before abbreviation (start right before abbreviation candidate)
+                # reverse list of tokens before abbreviation (start right before abbreviation candidate)
+                pre_string_list_rev = [w for w in reversed(pre_string_list)]
                 #print(pre_string_list_rev)
                 
                 ex_list = list()  # tokens of possible long version candidate
@@ -129,7 +139,8 @@ class AbbrevMatcher(object):
                         ex_list.append(w)
                         continue
 
-                    w_test = w.strip(string.punctuation)  # strip first token of long version candidate from punctuation characters
+                    # strip first token of long version candidate from punctuation characters
+                    w_test = w.strip(string.punctuation)
                     try:
                         word_start = w_test[0]  # first character of the word
                     except IndexError:
@@ -138,7 +149,9 @@ class AbbrevMatcher(object):
                         ex_list.append(w)
                         if not w.lower() in stopwords:
                             break  # first token of long version found
-                    if pos >= 7 and first_before_start == start_char.lower():  # it is 8 tokens long already and the token immediately before has the same start character
+
+                    # it is 8 tokens long already and the token immediately before has the same start character
+                    if pos >= 7 and first_before_start == start_char.lower():
                         ex_list = [pre_string_list_rev[0]]
                         break  # use token immeadiately before abbreviation as first token in long version
                     if pos == len(pre_string_list_rev) - 1:  # if end of prestringlist is reached
@@ -152,7 +165,8 @@ class AbbrevMatcher(object):
                 if not ex_list == []:
                     long_version = ' '.join([w for w in reversed(ex_list)]).strip(string.punctuation)
 
-                    if self.prefilter_long_version(long_version, abbrev_candidate) is False:  # long version has been filtered based on its string features
+                    # long version has been filtered based on its string features
+                    if self.prefilter_long_version(long_version, abbrev_candidate) is False:
                         continue
 
                     if abbrev_candidate not in self.data:
@@ -187,7 +201,10 @@ class AbbrevMatcher(object):
         return instring
 
     def extract_from_file(self, file_path):
-        '''Finds abbreviations in one text file. And returns a dictionary mapping abbreviations to their long forms.'''
+        '''
+        Finds abbreviations in one text file.
+        And returns a dictionary mapping abbreviations to their long forms.
+        '''
         with open(file_path, 'r') as f:
             f_lines = f.readlines()
             for line in f_lines:
